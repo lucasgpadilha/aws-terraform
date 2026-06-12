@@ -15,3 +15,9 @@ variable "project_name" {
   type        = string
   default     = "portfolio"
 }
+
+variable "public_key_path" {
+  description = "Path to SSH public key"
+  type        = string
+  default     = "~/.ssh/portfolio-key.pub"
+}

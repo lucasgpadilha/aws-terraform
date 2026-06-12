@@ -13,14 +13,32 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+resource "aws_key_pair" "portfolio" {
+  key_name   = "${var.project_name}-key"
+  public_key = file(var.public_key_path)
+
+  tags = {
+    Name    = "${var.project_name}-key"
+    Project = var.project_name
+  }
+}
+
 resource "aws_security_group" "portfolio" {
   name        = "${var.project_name}-sg"
-  description = "Allow HTTP and SSH traffic"
+  description = "Allow HTTP, HTTPS and SSH traffic"
 
   ingress {
     description = "HTTP"
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -49,15 +67,12 @@ resource "aws_security_group" "portfolio" {
 resource "aws_instance" "portfolio" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = var.instance_type
+  key_name               = aws_key_pair.portfolio.key_name
   vpc_security_group_ids = [aws_security_group.portfolio.id]
 
   user_data = <<-EOF
     #!/bin/bash
     dnf update -y
-    dnf install -y nginx
-    systemctl enable nginx
-    systemctl start nginx
-    echo "<h1>Portfolio - Em construção</h1>" > /usr/share/nginx/html/index.html
   EOF
 
   tags = {
